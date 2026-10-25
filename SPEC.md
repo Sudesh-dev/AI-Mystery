@@ -578,7 +578,7 @@ GEMINI_VIDEO_MODEL=configure-a-current-supported-video-model
 CASE_TTL_DAYS=7
 MAX_ACTIVE_GENERATIONS_PER_SESSION=1
 MAX_CASE_GENERATIONS_PER_HOUR=5
-GENERATION_TIMEOUT_MS=180000
+GENERATION_TIMEOUT_MS=300000
 Requirements:
 
 Parse environment variables at server startup with Zod and fail fast for missing required values.

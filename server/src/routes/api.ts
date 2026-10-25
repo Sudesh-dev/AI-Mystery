@@ -4,14 +4,15 @@ import { accusationSchema, createCaseSchema } from '../domain/schemas.js';
 import { createCase, getOwnedCase, resultDto } from '../services/caseService.js';
 import { MysteryCaseModel } from '../models/MysteryCase.js';
 import { env } from '../config/env.js';
-import { resolve, relative, sep } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
+import { mediaRoot } from '../services/media/storage.js';
 
 export const apiRouter=Router();
 const generationLimit=rateLimit({windowMs:60*60*1000,limit:env.MAX_CASE_GENERATIONS_PER_HOUR,standardHeaders:'draft-7',legacyHeaders:false,message:{error:{code:'RATE_LIMITED',message:'Please wait before opening another case.'}}});
 function fail(res:any,status:number,code:string,message:string){return res.status(status).json({error:{code,message,requestId:res.locals.requestId}});}
 apiRouter.post('/cases',generationLimit,async(req,res,next)=>{
   try{
-    const origin=req.get('origin');if(origin&&origin!==env.CLIENT_ORIGIN)return fail(res,403,'ORIGIN_NOT_ALLOWED','This request could not be accepted.');
+    const origin=req.get('origin');if((env.NODE_ENV==='production'&&origin!==env.CLIENT_ORIGIN)||(origin&&origin!==env.CLIENT_ORIGIN))return fail(res,403,'ORIGIN_NOT_ALLOWED','This request could not be accepted.');
     const parsed=createCaseSchema.safeParse(req.body);if(!parsed.success)return fail(res,400,'VALIDATION_ERROR','Please check the scenario and case settings.');
     const active=await MysteryCaseModel.exists({ownerSessionId:req.sessionId,status:'generating'});if(active)return fail(res,409,'CASE_NOT_READY','Your current case is still being prepared.');
     const recent=await MysteryCaseModel.countDocuments({ownerSessionId:req.sessionId,createdAt:{$gte:new Date(Date.now()-60*60*1000)}});if(recent>=env.MAX_CASE_GENERATIONS_PER_HOUR)return fail(res,429,'RATE_LIMITED','You have opened several cases recently. Please try again later.');
@@ -29,7 +30,7 @@ apiRouter.get('/cases/:caseId',async(req,res,next)=>{
 });
 apiRouter.post('/cases/:caseId/accusations',async(req,res,next)=>{
   try{
-    const origin=req.get('origin');if(origin&&origin!==env.CLIENT_ORIGIN)return fail(res,403,'ORIGIN_NOT_ALLOWED','This request could not be accepted.');
+    const origin=req.get('origin');if((env.NODE_ENV==='production'&&origin!==env.CLIENT_ORIGIN)||(origin&&origin!==env.CLIENT_ORIGIN))return fail(res,403,'ORIGIN_NOT_ALLOWED','This request could not be accepted.');
     const parsed=accusationSchema.safeParse(req.body);if(!parsed.success)return fail(res,400,'VALIDATION_ERROR','Choose one suspect and up to three unique evidence items.');
     const record=await getOwnedCase(req.params.caseId,req.sessionId);if(!record)return fail(res,404,'CASE_NOT_FOUND','That case could not be found.');
     if(record.status==='completed')return res.json({status:'completed',result:resultDto(record)});
@@ -53,7 +54,7 @@ apiRouter.get('/cases/:caseId/media/:evidenceId',async(req,res,next)=>{
     const record=await getOwnedCase(req.params.caseId,req.sessionId);if(!record)return fail(res,404,'CASE_NOT_FOUND','That case could not be found.');
     const asset=(record.mediaAssets as any[]).find((entry)=>entry.evidenceId===req.params.evidenceId&&entry.state==='ready');
     if(!asset)return fail(res,404,'MEDIA_NOT_FOUND','That case artifact is unavailable.');
-    const root=resolve(process.cwd(),'uploads');const file=resolve(asset.storagePath);const rel=relative(root,file);
+    const root=mediaRoot;const file=resolve(asset.storagePath);const rel=relative(root,file);
     if(rel.startsWith(`..${sep}`)||rel==='..'||rel.startsWith(sep))return fail(res,404,'MEDIA_NOT_FOUND','That case artifact is unavailable.');
     res.setHeader('Content-Type',asset.mimeType);res.setHeader('Cache-Control','private, max-age=3600');
     return res.sendFile(file,(error)=>{if(error&&!res.headersSent)fail(res,404,'MEDIA_NOT_FOUND','That case artifact is unavailable.');});

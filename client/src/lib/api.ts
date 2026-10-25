@@ -2,7 +2,7 @@ import type { MysteryCase, MysteryResult } from './types';
 
 const base = '/api/v1';
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${base}${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...init?.headers } });
+  const response = await fetch(`${base}${path}`, { ...init, cache: 'no-store', credentials: 'include', headers: { 'Content-Type': 'application/json', ...init?.headers } });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body?.error?.message || 'We could not complete that request. Please try again.');
   return body as T;

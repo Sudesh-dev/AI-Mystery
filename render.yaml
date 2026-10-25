@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: ai-mystery-room
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_TEXT_MODEL
+        sync: false
+      - key: ENABLE_IMAGE_GENERATION
+        value: "false"
+      - key: ENABLE_VIDEO_GENERATION
+        value: "false"
+      - key: MAX_CASE_GENERATIONS_PER_HOUR
+        value: "5"
+      - key: GENERATION_TIMEOUT_MS
+        value: "300000"

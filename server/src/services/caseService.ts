@@ -28,7 +28,8 @@ export async function createCase(ownerSessionId:string,input:Record<string,unkno
 async function runGeneration(publicId:string,input:Parameters<typeof generateCase>[0]){
   try{
     let timeout:ReturnType<typeof setTimeout>|undefined;
-    const content=await Promise.race([generateCase(input,async(stage)=>{await MysteryCaseModel.updateOne({publicId},{$set:{generationStage:stage}});}),new Promise<never>((_resolve,reject)=>{timeout=setTimeout(()=>reject(new Error('Generation timeout')),env.GENERATION_TIMEOUT_MS);})]).finally(()=>{if(timeout)clearTimeout(timeout);});
+    let currentStage:'blueprint'|'evidence'='blueprint';
+    const content=await Promise.race([generateCase(input,async(stage)=>{currentStage=stage;await MysteryCaseModel.updateOne({publicId},{$set:{generationStage:stage}});}),new Promise<never>((_resolve,reject)=>{timeout=setTimeout(()=>reject(new GenerationFailure(currentStage,'GENERATION_TIMEOUT')),env.GENERATION_TIMEOUT_MS);})]).finally(()=>{if(timeout)clearTimeout(timeout);});
     const mediaAssets:any[]=[];
     const wantsImage=env.ENABLE_IMAGE_GENERATION==='true'&&input.evidenceTypes.includes('image');
     const wantsVideo=env.ENABLE_VIDEO_GENERATION==='true'&&input.evidenceTypes.includes('cctv');
@@ -54,7 +55,7 @@ async function runGeneration(publicId:string,input:Parameters<typeof generateCas
     await MysteryCaseModel.updateOne({publicId},{$set:{publicCase:publicCaseDto(content),solution,privateAnnotations,mediaAssets,status:'ready',generationStage:'complete'}});
   }catch(error){
     const generationError=error instanceof GenerationFailure?error:null;
-    const code=generationError?.safeCode||(error instanceof Error&&error.message==='Generation timeout'?'GENERATION_TIMEOUT':'GENERATION_FAILED');
+    const code=generationError?.safeCode||'GENERATION_FAILED';
     console.error(JSON.stringify({event:'case_generation_failed',publicId,stage:generationError?.stage||'generation',code,...(generationError?.providerStatus?{providerStatus:generationError.providerStatus}:{}),...(generationError?.diagnostics?{diagnostics:generationError.diagnostics}:{})}));
     await MysteryCaseModel.updateOne({publicId},{$set:{status:'failed',generationStage:'failed',failureCode:code}});
   }

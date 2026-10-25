@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve, sep } from 'node:path';
-export const mediaRoot=resolve(process.cwd(),'uploads');
+import { env } from '../../config/env.js';
+export const mediaRoot=env.MEDIA_STORAGE_DIR;
 export async function saveAsset(caseId:string,evidenceId:string,asset:{bytes:Buffer;mimeType:string;provider:string;model:string}){
   const extension=asset.mimeType==='video/mp4'?'mp4':'png';const storagePath=resolve(mediaRoot,caseId,`${evidenceId}.${extension}`);
   const relativePath=relative(mediaRoot,storagePath);
