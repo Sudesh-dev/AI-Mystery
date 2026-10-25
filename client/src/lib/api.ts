@@ -1,4 +1,4 @@
-import type { MysteryCase, MysteryResult } from './types';
+import type { GenerationHistoryEntry, MysteryCase, MysteryResult } from './types';
 
 const base = '/api/v1';
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -9,6 +9,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 export const api = {
   createCase: (data: object) => request<{ caseId: string; status: string; pollAfterMs: number }>('/cases', { method: 'POST', body: JSON.stringify(data) }),
+  getHistory: () => request<{ history: GenerationHistoryEntry[] }>('/cases/history'),
+  useFallback: (id: string) => request<{ status: string; demoMode: boolean }>(`/cases/${id}/fallback`, { method: 'POST' }),
+  retryCase: (id: string) => request<{ caseId: string; status: string; pollAfterMs: number }>(`/cases/${id}/retry`, { method: 'POST' }),
   getCase: (id: string) => request<MysteryCase>(`/cases/${id}`),
   accuse: (id: string, data: object) => request(`/cases/${id}/accusations`, { method: 'POST', body: JSON.stringify(data) }),
   getResult: (id: string) => request<MysteryResult>(`/cases/${id}/result`),

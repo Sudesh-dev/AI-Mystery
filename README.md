@@ -44,7 +44,8 @@ The app is deployed as one Render web service: Express serves the built React si
    - `CLIENT_ORIGIN`: the exact HTTPS origin Render assigns, for example `https://ai-mystery-room.onrender.com` (no trailing slash).
    - `MONGODB_URI`: the Atlas connection string.
    - `GEMINI_API_KEY`: your Gemini API key.
-   - `GEMINI_TEXT_MODEL`: a current supported text model ID.
+   - `GEMINI_QUICK_TEXT_MODEL`: the low-latency text model used for case generation; the Blueprint defaults to `gemini-3.8-flash`.
+   - `GEMINI_TEXT_MODEL`: optional backup model setting.
 4. Keep `ENABLE_IMAGE_GENERATION` and `ENABLE_VIDEO_GENERATION` set to `false` for the first deployment. Text-only cases and the investigation flow will work; the synthetic media fallbacks remain available.
 5. Create the Blueprint. Render runs `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`. Open the service URL after the deploy reports **Live**.
 
@@ -81,6 +82,8 @@ Set production environment variables before starting. On Windows PowerShell, set
 - Responsive landing page and scenario builder.
 - Three.js procedural investigation desk, built from code-created meshes.
 - Case room with suspects, timeline, filterable evidence, evidence viewers, evidence citation, and a final accusation.
+- Session-private generation history with success/failure status and a detail modal.
+- Fast case generation with a labeled sample fallback and a background wait option when Gemini is slow.
 - Deterministic server-side scoring and solution reveal after accusation.
 
 ## Security

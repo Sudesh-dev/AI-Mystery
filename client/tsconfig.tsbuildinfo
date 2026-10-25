@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/evidencescene.ts","./src/lib/api.ts","./src/lib/types.ts","./src/pages/casepage.tsx","./src/pages/createpage.tsx","./src/pages/generationpage.tsx","./src/pages/landingpage.tsx","./src/pages/resultpage.tsx"],"version":"5.9.3"}

@@ -167,6 +167,20 @@ Anonymous sessions; no registration/login in v1.
 Responsive desktop, tablet, and mobile layouts.
 Loading, empty, error, and recovery states.
 Tests for solution secrecy, case validation, scoring, session ownership, and primary user flow.
+
+3.1.1 Generation history
+The landing page includes a recent generation history section for the current anonymous session.
+Each row shows the case title on the left and a clear generation status on the right: In progress, Succeeded, or Failed.
+Opening a row shows a modal with the submitted scenario/settings, creation and update times, outcome, safe generation stage, and safe failure code/message when generation failed. Successful entries may show the public case summary and suspect/evidence counts, but never private solution fields or clue annotations.
+History is read only and must be scoped to the signed anonymous session. It follows normal case retention and does not make cases publicly searchable.
+Provide loading, empty, error, retry, and modal close states. The modal must be keyboard accessible and usable on mobile.
+
+3.1.2 Fast generation and fallback
+Use a low-latency Gemini text model and a compact case plan (6–8 evidence items) for the standard generation flow. Configure low thinking effort where the model supports it.
+After 60 seconds, tell the player the custom case is taking longer and offer a clearly labeled sample case that can be opened immediately. The player may keep waiting for the requested story; generation continues in the background and the player can return from history.
+If custom generation reaches the hard timeout (300 seconds by default) or a Gemini/provider/schema generation failure occurs, open the clearly labeled sample case instead of leaving the case failed. Record the safe failure code for diagnostics. The sample must never be presented as generated from the player's story.
+An explicit fallback action and the automatic hard-timeout fallback must atomically prevent a late Gemini response from replacing the ready sample case.
+Allow the owner to retry a failed generation or a ready sample fallback using the same saved scenario/settings. Retry creates a new case record with a new ID, preserves the original history entry, and obeys active-generation and hourly limits.
 3.2 Configurable capabilities
 Gemini-generated still images for image evidence and, where useful, fictional suspect portraits.
 Gemini-generated short video clips for CCTV evidence.
@@ -410,6 +424,13 @@ If generating, return only { caseId, status, generationStage, pollAfterMs }.
 If failed, return status and a safe retry message.
 If ready, return the public case DTO and status.
 If completed, return the public case DTO plus the submitted accusation state, but the full solution is returned from the result endpoint only. The frontend may link to the result screen.
+
+10.3.1 GET /api/v1/cases/history
+Verify the signed anonymous session and return a bounded list of that session's most recent cases. The history DTO may include the submitted scenario/settings, title, lifecycle status/timestamps, safe generation stage/failure code, and public success summary. It must not return the canonical solution, hidden annotations, provider prompts, or raw provider output.
+10.3.2 POST /api/v1/cases/:caseId/fallback
+Verify ownership and replace a still-generating case with the fixed, clearly labeled sample mystery. The state change must be conditional on the case still being in generating state.
+10.3.3 POST /api/v1/cases/:caseId/retry
+Verify ownership and allow retry only for failed cases or ready sample fallbacks. Create a new case ID from the saved, validated input, preserve the original record, apply the normal active-generation and hourly limits, and return 202 with the new case ID.
 10.4 POST /api/v1/cases/:caseId/accusations
 Request:
 
@@ -488,6 +509,7 @@ TimelinePanel
 EvidenceSelectionControl
 AccusationDialog
 ResultPage
+GenerationHistorySection / HistoryDetailsDialog
 ErrorState / NotFoundPage
 These names are conceptual; components may be grouped sensibly. Avoid one huge component per route. Use typed props and isolate evidence renderers by evidence type.
 
@@ -568,6 +590,7 @@ MONGODB_URI=mongodb://127.0.0.1:27017/ai_mystery_room
 SESSION_SECRET=replace-with-a-long-random-secret
 GEMINI_API_KEY=replace-with-your-key
 GEMINI_TEXT_MODEL=configure-a-current-supported-text-model
+GEMINI_QUICK_TEXT_MODEL=gemini-3.8-flash
 
 # Optional media capabilities. Keep secrets server-side.
 ENABLE_IMAGE_GENERATION=false
@@ -623,6 +646,7 @@ blueprint validator rejects missing culprit, multiple culprits, duplicate IDs, i
 evidence validator rejects references to unknown suspects or unsupported types;
 score calculator returns 70 for correct culprit with no cited clues, 0 for incorrect culprit with no relevant evidence, adds 10 per selected decisive/supporting evidence up to 30, and never exceeds 100;
 public DTO mapper excludes the hidden solution and all private evidence annotations before accusation.
+generation history DTO includes only the current anonymous session's entries and never includes the solution or private annotations;
 API integration tests
 
 create case returns 202 and a valid case ID;

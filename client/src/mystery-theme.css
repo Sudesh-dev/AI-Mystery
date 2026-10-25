@@ -1,0 +1,119 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Manrope', sans-serif;
+  color: #e8dfcf;
+  background: #090d11;
+  --bg: #090d11;
+  --panel: #10161a;
+  --panel-2: #151c20;
+  --line: rgba(218, 190, 143, .15);
+  --muted: #a59c8e;
+  --dim: #77766f;
+  --paper: #e8dfcf;
+  --amber: #d5ad70;
+  --amber-soft: #b88d53;
+  --red: #a95d4d;
+  --green: #95a38a;
+  --mono: 'IBM Plex Mono', monospace;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+}
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 14% 8%, rgba(104, 39, 34, .22), transparent 34rem),
+    radial-gradient(ellipse at 85% 20%, rgba(160, 118, 63, .12), transparent 32rem),
+    radial-gradient(ellipse at 50% 80%, rgba(26, 49, 56, .18), transparent 42rem),
+    linear-gradient(135deg, #090d11 0%, #11171a 48%, #0a0e12 100%);
+  background-attachment: fixed;
+  color: var(--paper);
+}
+
+::selection { background: rgba(213, 173, 112, .38); color: #fff8e9; }
+
+.site-header {
+  background: rgba(8, 12, 15, .88);
+  border-bottom-color: rgba(218, 190, 143, .12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .16);
+}
+
+.brand { font-family: 'Manrope', sans-serif; letter-spacing: .19em; }
+.brand-icon { border-color: rgba(213, 173, 112, .48); box-shadow: inset 0 0 18px rgba(213, 173, 112, .08); }
+
+.hero { isolation: isolate; }
+.hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: min(70vw, 820px);
+  height: min(50vw, 540px);
+  right: -8%;
+  top: 6%;
+  pointer-events: none;
+  background: radial-gradient(ellipse, rgba(174, 126, 65, .12), rgba(106, 43, 37, .07) 38%, transparent 72%);
+  filter: blur(12px);
+}
+
+.hero h1, .create-intro h1, .generation-card h1, .result-hero h1,
+.intro h2, .evidence-heading h2, .closing h2,
+.case-heading h1, .panel-heading h2, .report-card h2,
+.history-heading h2, .history-dialog-heading h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: -.025em;
+}
+
+.hero h1 { text-shadow: 0 5px 34px rgba(0, 0, 0, .28); }
+.eyebrow, .mono-label, .section-kicker, .panel-code, .fiction-pill,
+.case-meta > span, .evidence-index, .evidence-art-time, .simulation-label,
+.generation-disclaimer, .site-footer, .report-kicker, .score-chip > span {
+  font-family: var(--mono);
+}
+
+.eyebrow { color: #b6aa95; letter-spacing: .17em; }
+.live-dot, .fiction-pill i { background: #c17b58; box-shadow: 0 0 10px rgba(193, 123, 88, .55); }
+.scroll-progress span { background: linear-gradient(90deg, #a95d4d, var(--amber)); }
+
+.preloader {
+  background:
+    radial-gradient(ellipse at 50% 43%, rgba(117, 52, 43, .17), transparent 31rem),
+    linear-gradient(145deg, #080c10, #111619 55%, #090d11);
+}
+.preloader-mark { border-color: rgba(213, 173, 112, .4); box-shadow: 0 0 36px rgba(169, 93, 77, .12); }
+
+.artifact-label, .builder-form, .suspects-panel, .timeline-panel,
+.case-brief-strip, .evidence-card, .report-card, .history-state,
+.history-empty, .history-dialog, .accusation-bar {
+  background-color: rgba(16, 22, 26, .88);
+  border-color: rgba(218, 190, 143, .17);
+  box-shadow: 0 14px 48px rgba(0, 0, 0, .16);
+}
+
+.case-brief-strip, .builder-form, .suspects-panel, .timeline-panel, .report-card {
+  backdrop-filter: blur(10px);
+}
+
+.evidence-card:hover, .suspect-card:hover { border-color: rgba(213, 173, 112, .38); }
+.evidence-card-art { background-color: #11191d; }
+.evidence-art-chat { background-image: radial-gradient(ellipse at 70% 35%, rgba(54, 82, 79, .3), transparent 55%), linear-gradient(145deg, #11191d, #161719); }
+.evidence-art-image { background-image: radial-gradient(ellipse at 50% 55%, rgba(132, 101, 68, .22), transparent 55%), linear-gradient(145deg, #121719, #191718); }
+.evidence-art-cctv { background-image: radial-gradient(ellipse at 50% 55%, rgba(70, 93, 89, .2), transparent 60%), linear-gradient(145deg, #101719, #15191a); }
+.evidence-art-document { background-image: radial-gradient(ellipse at 50% 55%, rgba(139, 105, 60, .18), transparent 60%), linear-gradient(145deg, #171716, #111619); }
+
+.button-primary { box-shadow: 0 5px 20px rgba(213, 173, 112, .12); }
+.button-primary:hover { box-shadow: 0 7px 26px rgba(213, 173, 112, .2); }
+.header-cta:hover { box-shadow: 0 0 22px rgba(213, 173, 112, .1); }
+
+.history-modal-backdrop, .dialog-backdrop { background: rgba(3, 6, 8, .82); backdrop-filter: blur(8px); }
+.history-dialog, .accusation-dialog { background: #11181c; border-color: rgba(213, 173, 112, .28); }
+
+.site-footer { border-top-color: rgba(218, 190, 143, .12); color: #8d887e; }
+
+@media (max-width: 640px) {
+  body { background-attachment: scroll; }
+  .hero::before { width: 120vw; height: 90vw; right: -35%; top: 34%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::before { filter: none; }
+}

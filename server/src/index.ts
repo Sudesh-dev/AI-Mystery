@@ -22,7 +22,7 @@ async function cleanupExpired(){
 
 async function start(){
   await mongoose.connect(env.MONGODB_URI,{serverSelectionTimeoutMS:10000});
-  await MysteryCaseModel.updateMany({status:'generating',updatedAt:{$lt:new Date(Date.now()-env.GENERATION_TIMEOUT_MS)}},{$set:{status:'failed',generationStage:'failed',failureCode:'STALE_GENERATION'}});
+  await MysteryCaseModel.updateMany({status:'generating',updatedAt:{$lt:new Date(Date.now()-env.GENERATION_TIMEOUT_MS)}},{$set:{status:'failed',generationStage:'failed',failureStage:'generation',failureCode:'STALE_GENERATION'}});
   await cleanupExpired();setInterval(()=>{void cleanupExpired().catch(()=>console.error(JSON.stringify({event:'cleanup_failed',code:'CLEANUP_FAILED'})));},15*60*1000).unref();
   const server=createServer(app);
   server.listen(env.SERVER_PORT,'0.0.0.0',()=>console.log(JSON.stringify({event:'server_started',port:env.SERVER_PORT,mode:env.NODE_ENV})));

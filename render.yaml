@@ -19,6 +19,8 @@ services:
         sync: false
       - key: GEMINI_TEXT_MODEL
         sync: false
+      - key: GEMINI_QUICK_TEXT_MODEL
+        value: gemini-3.8-flash
       - key: ENABLE_IMAGE_GENERATION
         value: "false"
       - key: ENABLE_VIDEO_GENERATION
