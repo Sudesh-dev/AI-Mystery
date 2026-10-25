@@ -17,12 +17,23 @@ export function CreatePage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ scenario: '', title: '', setting: '', difficulty: 'medium', tone: 'classic_detective', contentNote: '' });
   const [types, setTypes] = useState<EvidenceType[]>(['chat','image','cctv','document']);
-  const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
-  const toggle = (id: EvidenceType) => setTypes((current) => current.includes(id) ? current.filter((type) => type !== id) : [...current, id]);
+  const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [attempted, setAttempted] = useState(false);
+  const storyLength = form.scenario.trim().length;
+  const storyError = attempted && storyLength < 80 ? 'Add a little more detail (at least 80 characters) so the mystery can be solved fairly.' : '';
+  const titleError = attempted && form.title.trim().length > 0 && form.title.trim().length < 3 ? 'Use at least 3 characters, or leave the title blank.' : '';
+  const toggle = (id: EvidenceType) => setTypes((current) => {
+    return current.includes(id) ? current.filter((type) => type !== id) : [...current, id];
+  });
   const submit = async (event: FormEvent) => {
-    event.preventDefault(); setError('');
+    event.preventDefault(); setError(''); setAttempted(true);
     const parsed = schema.safeParse({...form,title:form.title.trim()||undefined,setting:form.setting.trim()||undefined,contentNote:form.contentNote.trim()||undefined});
-    if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Check the highlighted fields.'); return; }
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const field = typeof issue?.path[0] === 'string' ? document.getElementById(issue.path[0]) : null;
+      field?.focus();
+      if (issue?.path[0] !== 'scenario') setError(issue?.message || 'Check the highlighted fields.');
+      return;
+    }
     setBusy(true);
     try {
       const created = await api.createCase({ ...parsed.data, evidenceTypes: types.length ? types : ['document'] });
@@ -36,12 +47,14 @@ export function CreatePage() {
       <form className="builder-form" onSubmit={submit}>
         <div className="form-heading"><span>01 / STORY</span><span className="required-tag">REQUIRED</span></div>
         <label className="field-label" htmlFor="scenario">What happened?</label>
-        <textarea id="scenario" value={form.scenario} onChange={(e)=>setForm({...form,scenario:e.target.value})} placeholder="A stage manager at a small theatre finds the original script missing just before opening night. Three people had keys to the prop room..." maxLength={5000} rows={5} aria-describedby="story-help story-count" />
-        <div className="field-foot"><span id="story-help">Give us a fictional setup. Do not include real names or private messages.</span><span id="story-count" className={form.scenario.length>5000?'error-text':''}>{form.scenario.length} / 5,000</span></div>
-        <div className="form-row"><div className="form-field"><label className="field-label" htmlFor="title">Case title <span>OPTIONAL</span></label><input id="title" value={form.title} maxLength={80} onChange={(e)=>setForm({...form,title:e.target.value})} placeholder="Let the story name itself" /></div><div className="form-field"><label className="field-label" htmlFor="setting">Setting <span>OPTIONAL</span></label><input id="setting" value={form.setting} maxLength={120} onChange={(e)=>setForm({...form,setting:e.target.value})} placeholder="A theatre on opening night" /></div></div>
+        <textarea id="scenario" value={form.scenario} onChange={(e)=>{setForm({...form,scenario:e.target.value});setError('');}} placeholder="A stage manager at a small theatre finds the original script missing just before opening night. Three people had keys to the prop room..." maxLength={5000} rows={5} aria-invalid={Boolean(storyError)} aria-describedby="story-help story-count story-validation" />
+        <div className="field-foot"><span id="story-help">Give us a fictional setup. Do not include real names or private messages.</span><span id="story-count" className={storyLength<80?'story-count-low':''}>{storyLength} / 5,000</span></div>
+        <div className={`story-validation ${storyError?'is-error':''}`} id="story-validation" aria-live="polite">{storyError||(storyLength>=80?'Story length looks good.':`${80-storyLength} more characters to meet the minimum`)}</div>
+        <div className="form-row"><div className="form-field"><label className="field-label" htmlFor="title">Case title <span>OPTIONAL</span></label><input id="title" value={form.title} maxLength={80} aria-invalid={Boolean(titleError)} aria-describedby="title-validation" onChange={(e)=>{setForm({...form,title:e.target.value});setError('');}} placeholder="Let the story name itself" /><div className={`field-inline-error ${titleError?'is-visible':''}`} id="title-validation" aria-live="polite">{titleError}</div></div><div className="form-field"><label className="field-label" htmlFor="setting">Setting <span>OPTIONAL</span></label><input id="setting" value={form.setting} maxLength={120} onChange={(e)=>setForm({...form,setting:e.target.value})} placeholder="A theatre on opening night" /></div></div>
         <div className="form-row"><div className="form-field"><label className="field-label" htmlFor="difficulty">Difficulty</label><select id="difficulty" value={form.difficulty} onChange={(e)=>setForm({...form,difficulty:e.target.value})}><option value="easy">Easy · clear clues</option><option value="medium">Medium · read between lines</option><option value="hard">Hard · subtle connections</option></select></div><div className="form-field"><label className="field-label" htmlFor="tone">Story tone</label><select id="tone" value={form.tone} onChange={(e)=>setForm({...form,tone:e.target.value})}><option value="classic_detective">Classic detective</option><option value="cozy">Cozy mystery</option><option value="thriller">Thriller</option><option value="lighthearted">Lighthearted</option></select></div></div>
-        <div className="form-heading evidence-form-heading"><span>02 / EVIDENCE TYPES</span><span className="required-tag">CHOOSE ANY</span></div>
-        <div className="evidence-choice-grid">{choices.map(({id,title,detail,Icon})=><button type="button" className={`evidence-choice ${types.includes(id)?'selected':''}`} key={id} onClick={()=>toggle(id)} aria-pressed={types.includes(id)}><span className="choice-icon"><Icon size={17}/></span><span><b>{title}</b><small>{detail}</small></span><span className="choice-check">{types.includes(id)&&<Check size={13}/>}</span></button>)}</div>
+        <div className="form-heading evidence-form-heading"><span>02 / EVIDENCE TYPES</span><span className="required-tag">OPTIONAL</span></div>
+        <div className="evidence-choice-grid">{choices.map(({id,title,detail,Icon})=>{const selected=types.includes(id);return <button type="button" className={`evidence-choice ${selected?'selected':''}`} key={id} onClick={()=>toggle(id)} aria-pressed={selected} aria-label={`${title}: ${selected?'included':'not included'}`}><span className="choice-icon"><Icon size={17}/></span><span><b>{title}</b><small>{detail}</small></span><span className="choice-check">{selected&&<Check size={13}/>}</span></button>;})}</div>
+        <p className="evidence-selection-hint">Choose preferred formats, or leave them all off and we’ll use text evidence where needed.</p>
         <div className="form-field content-note"><label className="field-label" htmlFor="content-note">Content boundaries <span>OPTIONAL</span></label><input id="content-note" value={form.contentNote} maxLength={300} onChange={(e)=>setForm({...form,contentNote:e.target.value})} placeholder="Keep it light; no violence" /></div>
         {error&&<div className="form-error" role="alert">{error}</div>}
         <div className="form-bottom"><span>By continuing, you confirm this is a fictional scenario.</span><button className="button button-primary" type="submit" disabled={busy}>{busy?'Opening case…':'Build the case'}<ArrowUpRight size={16}/></button></div>

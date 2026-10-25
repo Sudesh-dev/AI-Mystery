@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowUpRight, AudioLines, Camera, CheckCircle2, ChevronRight, CircleX, Clock3, FileText, Fingerprint, LoaderCircle, MessageSquareText, RefreshCw, ScanLine, ShieldCheck, Sparkles, X } from 'lucide-react';
-import { mountEvidenceScene } from '../components/EvidenceScene';
 import { api } from '../lib/api';
 import type { GenerationHistoryEntry } from '../lib/types';
 
 function Scene() {
   const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => ref.current ? mountEvidenceScene(ref.current) : undefined, []);
+  useEffect(() => {
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+    void import('../components/EvidenceScene').then(({ mountEvidenceScene }) => {
+      if (!cancelled && ref.current) cleanup = mountEvidenceScene(ref.current);
+    }).catch(() => undefined);
+    return () => { cancelled = true; cleanup?.(); };
+  }, []);
   return <canvas className="hero-scene" ref={ref} aria-label="A three dimensional investigator's desk with an open case folder, magnifying glass, and evidence note" role="img" />;
 }
 
