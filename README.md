@@ -45,7 +45,7 @@ The app is deployed as one Render web service: Express serves the built React si
    - `MONGODB_URI`: the Atlas connection string.
    - `GEMINI_API_KEY`: your Gemini API key, stored as a Render secret.
 4. `GEMINI_QUICK_TEXT_MODEL` defaults to `gemini-3.8-flash`. Google lists standard Gemini 3.8 Flash token usage as free, subject to account eligibility and free-tier limits; don't enable paid billing if you want to keep costs at zero. Free-tier prompts may be used to improve Google's products, so submit fictional scenarios only. If the free tier isn't available for your Google project, stop rather than linking paid billing. Keep `ENABLE_IMAGE_GENERATION` and `ENABLE_VIDEO_GENERATION` set to `false`; the downloaded soundtrack is a static app asset and the case uses simulated media fallbacks.
-5. Create the Blueprint. Render runs `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`. If the first deployment fails because Atlas blocks the connection, allow the Render outbound ranges in Atlas and redeploy.
+5. Create the Blueprint. Render installs development dependencies for the TypeScript/Vite build, compiles the app, then removes development dependencies before starting with `npm start`. It checks `/api/health`. If the first deployment fails because Atlas blocks the connection, allow the Render outbound ranges in Atlas and redeploy.
 6. After the service is created, confirm `CLIENT_ORIGIN` matches its assigned HTTPS URL exactly, add Atlas network access as described above, then trigger **Manual Deploy → Deploy latest commit** if needed.
 
 ### 4. Verify the live app
