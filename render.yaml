@@ -2,13 +2,16 @@ services:
   - type: web
     name: ai-mystery-room
     runtime: node
-    plan: free
+    # A paid single-instance baseline avoids Free-tier sleeping in production.
+    plan: 0.5c-512mb
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 24.22.1
       - key: CLIENT_ORIGIN
         sync: false
       - key: MONGODB_URI
@@ -16,8 +19,6 @@ services:
       - key: SESSION_SECRET
         generateValue: true
       - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_TEXT_MODEL
         sync: false
       - key: GEMINI_QUICK_TEXT_MODEL
         value: gemini-3.8-flash

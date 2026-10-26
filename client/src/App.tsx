@@ -9,26 +9,15 @@ import { ResultPage } from './pages/ResultPage';
 
 function Preloader() {
   const [visible, setVisible] = useState(true);
-  const [progress, setProgress] = useState(0);
   useEffect(() => {
-    let raf = 0; let value = 0; const start = performance.now();
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      value = Math.min(92, 100 * (1 - Math.exp(-elapsed / 430)));
-      setProgress(value);
-      if (elapsed < 860) raf = requestAnimationFrame(tick);
-      else { setProgress(100); window.setTimeout(() => setVisible(false), 220); }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const timeout = window.setTimeout(() => setVisible(false), 420);
+    return () => window.clearTimeout(timeout);
   }, []);
   if (!visible) return null;
-  return <div className="preloader" role="status" aria-label="Preparing the investigation room">
+  return <div className="preloader" aria-hidden="true">
     <div className="preloader-mark"><Fingerprint size={26} strokeWidth={1.2} /></div>
-    <span className="eyebrow">PRIVATE CASE FILE</span>
-    <div className="preloader-title">After Hours</div>
-    <div className="preloader-track"><span style={{ width: `${progress}%` }} /></div>
-    <div className="preloader-caption">Preparing your investigation <span>{Math.round(progress)}%</span></div>
+    <span className="preloader-title">After Hours</span>
+    <span className="preloader-subtitle">The Case Archive</span>
   </div>;
 }
 
@@ -64,5 +53,5 @@ export default function App() {
     <Route path="/cases/:caseId" element={<CasePage />} />
     <Route path="/cases/:caseId/result" element={<ResultPage />} />
     <Route path="*" element={<NotFound />} />
-  </Routes><footer className="site-footer"><span>AFTER HOURS <b>·</b> FICTIONAL CASES, REAL DEDUCTION</span><span>AN EXPERIMENT IN OBSERVATION <b>✳</b> 2026</span></footer></>;
+  </Routes><footer className="site-footer"><span>After Hours · Fictional cases, real deduction</span><span>Make a theory. Test it against the record.</span></footer></>;
 }

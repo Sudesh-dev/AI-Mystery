@@ -10,7 +10,7 @@ A single-player detective game built from fictional scenarios. The backend creat
 
 ## Run locally
 
-1. Install Node.js 20 or newer and MongoDB (local or hosted).
+1. Install Node.js 24 LTS and MongoDB (local or hosted).
 2. Copy `.env.example` to `.env` and set `MONGODB_URI`, a unique `SESSION_SECRET`, and Gemini text credentials if you want AI-generated cases. Without Gemini credentials, the app uses its sample case.
 3. Install and run:
 
@@ -33,38 +33,37 @@ The app is deployed as one Render web service: Express serves the built React si
 ### 2. Create a MongoDB Atlas database
 
 1. Create an Atlas project and cluster, then create a database user with a strong password. Use a dedicated application user; do not use your Atlas account login.
-2. In **Network Access**, allow the Render service's outbound IP ranges. After the first Render service exists, find the ranges in its **Connect → Outbound** panel and add them to Atlas. If Atlas blocks the first boot, the app will exit with `DATABASE_UNAVAILABLE`; allow the ranges and redeploy. Atlas warns that `0.0.0.0/0` permits connections from anywhere; use it only as a temporary development workaround, with a strong database password, and replace it with the host's ranges before public launch.
-3. In Atlas, choose **Connect → Drivers** and copy the Node.js connection string. Replace the password placeholder and set the database name to `ai_mystery_room`. Keep this string private.
+2. In Atlas, choose **Connect → Drivers** and copy the Node.js connection string. Replace the password placeholder and set the database name to `ai_mystery_room`. URL-encode reserved characters in the username/password. Keep this string private.
+3. After the Render service exists, allow its outbound IP ranges in Atlas **Network Access**. In Render, open the service's **Connect → Outbound** panel and add the listed ranges. The app exits if Atlas rejects the initial connection; once the ranges are allowed, redeploy it. Avoid `0.0.0.0/0` for a public production database. Configure Atlas backups/retention appropriate to your data and budget.
 
 ### 3. Deploy the Render service
 
-1. In Render, choose **New → Blueprint**, connect the GitHub repository, and select the branch. Render reads `render.yaml`.
-2. Confirm the service name and region. The blueprint uses the Free plan for a preview; choose a paid instance for a public production launch.
+1. In Render, choose **New → Blueprint**, connect the GitHub repository, and select the branch. Render reads the root `render.yaml`.
+2. Confirm the service name and region. The blueprint uses a single-instance paid `0.5c-512mb` web plan and pins Node.js to `24.22.1`. Review the current plan price in Render before confirming deployment; Render's Free plan sleeps and is not suitable for a responsive public launch.
 3. When prompted, enter:
-   - `CLIENT_ORIGIN`: the exact HTTPS origin Render assigns, for example `https://ai-mystery-room.onrender.com` (no trailing slash).
+   - `CLIENT_ORIGIN`: the exact HTTPS service origin, for example `https://ai-mystery-room.onrender.com` (no trailing slash). If Render assigns a different URL, update this variable in **Environment** after creation and redeploy.
    - `MONGODB_URI`: the Atlas connection string.
-   - `GEMINI_API_KEY`: your Gemini API key.
-   - `GEMINI_QUICK_TEXT_MODEL`: the low-latency text model used for case generation; the Blueprint defaults to `gemini-3.8-flash`.
-   - `GEMINI_TEXT_MODEL`: optional backup model setting.
-4. Keep `ENABLE_IMAGE_GENERATION` and `ENABLE_VIDEO_GENERATION` set to `false` for the first deployment. Text-only cases and the investigation flow will work; the synthetic media fallbacks remain available.
-5. Create the Blueprint. Render runs `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`. Open the service URL after the deploy reports **Live**.
+   - `GEMINI_API_KEY`: your Gemini API key, stored as a Render secret.
+4. `GEMINI_QUICK_TEXT_MODEL` defaults to `gemini-3.8-flash`. Keep `ENABLE_IMAGE_GENERATION` and `ENABLE_VIDEO_GENERATION` set to `false` for this deployment. The generated investigation is playable with simulated media fallbacks; the downloaded soundtrack is a static app asset.
+5. Create the Blueprint. Render runs `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`. If the first deployment fails because Atlas blocks the connection, allow the Render outbound ranges in Atlas and redeploy.
+6. After the service is created, confirm `CLIENT_ORIGIN` matches its assigned HTTPS URL exactly, add Atlas network access as described above, then trigger **Manual Deploy → Deploy latest commit** if needed.
 
 ### 4. Verify the live app
 
 1. Open `https://<your-service>.onrender.com/api/health`; it should return `{"status":"ok"}`.
-2. Open the root URL and create a small fictional case.
-3. Confirm generation reaches the case room, refresh the page, submit an accusation, and verify the result appears only after submission.
-4. Inspect Render logs for `server_started` and `case_generation_failed`. Logs intentionally omit scenarios, prompts, and secrets.
-5. Test once in a private browser window to confirm the anonymous session cookie is created over HTTPS.
+2. Open the root URL, create a small fictional case, and confirm generation reaches the case room.
+3. Refresh, inspect evidence, submit an accusation, and verify the solution appears only after submission.
+4. Test history, retry/fallback, sound mute/volume, and one private browser session. Check that the browser keeps the secure `mystery_session` cookie over HTTPS.
+5. Inspect Render logs for `server_started` and safe generation failure codes. Logs intentionally omit scenarios, prompts, and secrets.
 
 ### Hosting notes
 
-- Render's Free web services sleep after 15 minutes idle and their local files are ephemeral; Render recommends Free for hobby projects and previews rather than production. Cases persist in Atlas, but images/videos saved to the local filesystem will disappear on restart, sleep, or deploy. A paid service is appropriate for a public launch.
-- Keep media generation disabled unless you attach a persistent Render disk at `/opt/render/project/src/uploads` and set `MEDIA_STORAGE_DIR` to that exact path. Persistent disks require a paid service and change deploy behavior. For multi-instance scaling or object storage, implement a shared storage adapter before enabling media.
-- This app runs generation work inside the web process. Keep a single service instance for now; scaling horizontally needs a shared job queue and a distributed rate-limit store.
+- Render's default filesystem is ephemeral. AI image/video generation is disabled in this deployment, so media uses labeled fallbacks and no generated-media persistence is needed. To enable generated media, this code currently needs a persistent disk mounted at `/opt/render/project/src/uploads` with `MEDIA_STORAGE_DIR` set to that exact path; configure the model IDs too. Persistent disks require a paid service, prevent horizontal scaling, and affect deploy behavior. A shared object-storage adapter is needed before scaling across instances.
+- Generation jobs and rate limits currently live in the web process. Keep one service instance; horizontal scaling needs a durable shared job queue and distributed rate limiting. A restart or deploy can interrupt an active generation and leave its history entry generating; open that case's progress page and use its sample fallback if needed. Add a durable queue before promising automatic recovery, uninterrupted deploys, or high availability.
 - Anonymous cases expire after `CASE_TTL_DAYS` (7 days by default). The cleanup job removes expired MongoDB records and locally stored media.
-- Render supplies `PORT`; the server binds to it on `0.0.0.0`. Production startup rejects local MongoDB URLs, weak session secrets, missing Gemini text settings, and non-HTTPS client origins.
+- Render supplies `PORT`; the server binds to it on `0.0.0.0`. Production startup rejects local MongoDB URLs, weak session secrets, missing Gemini text settings, non-HTTPS client origins, invalid media flags, and enabled media generation without its model ID.
 - If you add a custom domain, update `CLIENT_ORIGIN` to its exact `https://` origin and redeploy.
+- Before a public launch, confirm the downloaded soundtrack's license permits your intended use, configure domain/HTTPS and Atlas backups, and monitor Gemini quota, cost, latency, and error rates.
 
 ## Production build locally
 

@@ -12,8 +12,8 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1).default('mongodb://127.0.0.1:27017/ai_mystery_room'),
   SESSION_SECRET: z.string().min(16).default('local-development-secret-change-before-deploy'),
   GEMINI_API_KEY: z.string().optional(), GEMINI_TEXT_MODEL: z.string().optional(), GEMINI_QUICK_TEXT_MODEL: z.string().default('gemini-3.8-flash'),
-  ENABLE_IMAGE_GENERATION: z.string().default('false'), GEMINI_IMAGE_MODEL: z.string().optional(),
-  ENABLE_VIDEO_GENERATION: z.string().default('false'), GEMINI_VIDEO_MODEL: z.string().optional(),
+  ENABLE_IMAGE_GENERATION: z.enum(['true','false']).default('false'), GEMINI_IMAGE_MODEL: z.string().optional(),
+  ENABLE_VIDEO_GENERATION: z.enum(['true','false']).default('false'), GEMINI_VIDEO_MODEL: z.string().optional(),
   CASE_TTL_DAYS: z.coerce.number().positive().default(7), MAX_CASE_GENERATIONS_PER_HOUR: z.coerce.number().int().positive().default(5),
   GENERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(300000),
   MEDIA_STORAGE_DIR: z.string().default('uploads'),
@@ -26,6 +26,9 @@ if (parsedEnv.NODE_ENV === 'production') {
   if (!parsedEnv.GEMINI_API_KEY) problems.push('GEMINI_API_KEY is required');
   if (!parsedEnv.GEMINI_QUICK_TEXT_MODEL && !parsedEnv.GEMINI_TEXT_MODEL) problems.push('GEMINI_QUICK_TEXT_MODEL or GEMINI_TEXT_MODEL is required');
   if (!/^https:\/\//.test(parsedEnv.CLIENT_ORIGIN)) problems.push('CLIENT_ORIGIN must use HTTPS');
+  else if (new URL(parsedEnv.CLIENT_ORIGIN).origin !== parsedEnv.CLIENT_ORIGIN) problems.push('CLIENT_ORIGIN must be an HTTPS origin without a path or trailing slash');
+  if (parsedEnv.ENABLE_IMAGE_GENERATION === 'true' && !parsedEnv.GEMINI_IMAGE_MODEL) problems.push('GEMINI_IMAGE_MODEL is required when image generation is enabled');
+  if (parsedEnv.ENABLE_VIDEO_GENERATION === 'true' && !parsedEnv.GEMINI_VIDEO_MODEL) problems.push('GEMINI_VIDEO_MODEL is required when video generation is enabled');
   if (problems.length) throw new Error(`Invalid production configuration: ${problems.join('; ')}`);
 }
 export const env = { ...parsedEnv, MEDIA_STORAGE_DIR: isAbsolute(parsedEnv.MEDIA_STORAGE_DIR) ? parsedEnv.MEDIA_STORAGE_DIR : resolve(process.cwd(), parsedEnv.MEDIA_STORAGE_DIR) };

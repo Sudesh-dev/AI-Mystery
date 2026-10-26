@@ -97,6 +97,8 @@ const blueprintSchema = {
     },
     timeline: {
       type: "array",
+      minItems: 5,
+      maxItems: 20,
       items: {
         type: "object",
         properties: {
@@ -115,6 +117,8 @@ const blueprintSchema = {
         explanation: { type: "string" },
         reconstructionSteps: {
           type: "array",
+          minItems: 5,
+          maxItems: 20,
           items: {
             type: "object",
             properties: { time: { type: "string" }, event: { type: "string" } },
@@ -188,6 +192,7 @@ const evidenceSchema = {
               mediaState: { type: "string", enum: ["fallback"] },
               messages: {
                 type: "array",
+                maxItems: 20,
                 items: {
                   type: "object",
                   properties: {
@@ -234,14 +239,16 @@ const blueprintZod = z
           certainty: z.enum(["confirmed", "claimed"]),
         }),
       )
-      .min(5),
+      .min(5)
+      .max(20),
     solution: z.object({
       culpritSuspectId: z.string(),
       motive: z.string(),
       explanation: z.string(),
       reconstructionSteps: z
         .array(z.object({ time: z.string(), event: z.string() }))
-        .min(5),
+        .min(5)
+        .max(20),
     }),
     evidencePlan: z
       .array(
