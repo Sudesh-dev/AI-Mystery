@@ -2,8 +2,7 @@ services:
   - type: web
     name: ai-mystery-room
     runtime: node
-    # A paid single-instance baseline avoids Free-tier sleeping in production.
-    plan: 0.5c-512mb
+    plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
